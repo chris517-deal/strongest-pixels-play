@@ -124,14 +124,18 @@
 
   /* ---- THE RECORDS BOARD (press L) ---- */
   #board { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-           z-index:20; display:none; min-width:min(460px, 88vw);
+           z-index:20; display:none; min-width:min(620px, 94vw);
            background:rgba(0,0,0,.86); border:5px solid #ffe066; border-radius:14px;
            padding:24px 28px; pointer-events:auto; max-height:90vh; overflow:auto; }
   #board .lbhead { font-size:18px; color:#ffe066; letter-spacing:3px; text-align:center; margin:18px 0 8px; }
   #board .lbname { display:flex; gap:8px; align-items:center; justify-content:center; margin-bottom:8px; font-size:13px; }
   #board .lbname input { font:14px "Courier New",monospace; padding:4px 6px; width:170px; }
-  #board .lbrow { display:grid; grid-template-columns:28px 1fr auto auto; gap:12px; padding:3px 0; font-size:13px; }
+  #board .lbrow { display:grid; grid-template-columns:30px minmax(0,1.6fr) 44px 54px 54px minmax(0,1.3fr);
+                  gap:8px; padding:3px 0; font-size:12px; }
+  #board .lbrow span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #board .lbrow.lbtop { color:#ffe066; font-weight:bold; border-bottom:1px solid rgba(255,224,102,.4); }
   #board .lbrow.me { color:#7fffd4; }
+  #board .lbrow.owner span:nth-child(2) { color:#ffd700; font-weight:bold; }
   #board .lbnote { font-size:12px; opacity:.75; text-align:center; }
   #board h2 { font-size:26px; color:#ffe066; letter-spacing:4px; text-align:center;
               margin-bottom:16px; }
@@ -271,7 +275,7 @@
       <h2>YOUR RECORDS</h2>
       <div class="rows"></div>
       <div class="lbhead">TOP PLAYERS</div>
-      <div class="lbname">Your name: <input id="lbnick" maxlength="16" autocomplete="off" spellcheck="false"></div>
+      <div class="lbname">Your username: <input id="lbnick" maxlength="16" autocomplete="off" spellcheck="false"></div>
       <div class="lb"></div>
       <div class="foot">Press L to close</div>
     </div>
@@ -5874,6 +5878,8 @@ function loadStats() {
     if (Array.isArray(src.equipped)) best.equipped = src.equipped;
     if (Array.isArray(src.relics) && src.relics.length >= ((best.relics || []).length)) best.relics = src.relics;
     if (typeof src.nick === 'string') best.nick = src.nick;
+    if (src.guestTag) best.guestTag = src.guestTag;
+    if (src.ownerNamed) best.ownerNamed = src.ownerNamed;
   }
   return best;
 }
@@ -6191,40 +6197,136 @@ function clock(sec) {
   return h ? `${h}h ${m}m` : m ? `${m}m ${s}s` : `${s}s`;
 }
 
-// ============================ ONLINE LEADERBOARD ============================
-// Only works in the ONLINE version (the shared database lives there). Every
-// player's best is one document, scores/<their id>, which only THEY can
-// write. Ranked by how far up the boss ladder you've got.
+// ============================ ACCOUNTS & LEADERBOARD ============================
+// WHO YOU ARE
+//   * ACCOUNT -- you opened the online game signed in to Claude. Your scores
+//     go on the shared leaderboard under your username.
+//   * GUEST   -- everyone else (like someone just trying it out on the
+//     no-sign-up website). You get a name like "GUEST 4821", you can type
+//     your own username, and your progress saves on your own device -- but
+//     guests don't go on the shared leaderboard.
+//   * OWNER   -- the person who owns the game (Claude confirms it). Shows an
+//     OWNER badge on the leaderboard that nobody else can fake.
+//
+// THE LEADERBOARD (press L, or the side menu): every player's best is one
+// document, scores/<their id>, which only THEY can write. It shows the boss
+// they've reached, bosses beaten, kills, and their best moveset.
+const OWNER_USERNAME = 'LiamBulmer5186';
 const lbEl = document.querySelector('#board .lb');
 const lbNick = document.getElementById('lbnick');
 let lbDb = null, lbMe = null, lbRows = [], lbSent = '', lbReadOnly = false, lbStarted = false;
+let lbOwnerId = null;
+
+if (!stats.guestTag) { stats.guestTag = 1000 + ((Math.random() * 9000) | 0); }
+function isGuest() { return !lbDb || !lbMe; }
+function defaultName() { return isOwner ? OWNER_USERNAME : 'GUEST ' + stats.guestTag; }
+function myName() { return String(stats.nick || defaultName()).slice(0, 16); }
+
+// The strongest moveset you own -- shown on the board as your "best moveset".
+function bestMoveset() {
+  let best = null, top = -1;
+  for (const id of unlocked) {
+    const ms = MOVESETS[id];
+    const d = ms && ms.moves && ms.moves.q ? ms.moves.q.dmg : 0;
+    if (d > top) { top = d; best = ms; }
+  }
+  return best ? best.label : 'FISTS';
+}
+
+// The little "playing as" tag in the top-left corner.
+const whoEl = document.createElement('div');
+whoEl.style.cssText = 'position:fixed;top:12px;left:16px;z-index:12;font:bold 12px "Courier New",monospace;' +
+  'color:#fff;background:rgba(0,0,0,.45);padding:3px 9px;border-radius:6px;pointer-events:none;';
+document.body.appendChild(whoEl);
+function drawWho() {
+  // the OWNER title sits ABOVE the username, always -- it can't be taken off
+  whoEl.innerHTML = '';
+  if (isOwner) {
+    const t = document.createElement('div');
+    t.textContent = '★ OWNER ★';
+    t.style.cssText = 'color:#ffd700;font-size:10px;letter-spacing:2px;text-align:center;';
+    whoEl.appendChild(t);
+  }
+  const n = document.createElement('div');
+  n.textContent = myName() + (!isOwner && isGuest() ? '  (guest)' : '');
+  whoEl.appendChild(n);
+  drawNameTag();
+}
+
+// A NAMETAG floating over your character's head, Roblox-style. The owner's
+// has a gold OWNER title on top of the username.
+let nameTag = null, nameTagKey = '';
+function drawNameTag() {
+  const key = myName() + '|' + isOwner;
+  if (key === nameTagKey) return;
+  nameTagKey = key;
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 160;
+  const g = c.getContext('2d');
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.lineWidth = 10; g.strokeStyle = '#000';
+  if (isOwner) {
+    g.font = 'bold 46px "Courier New", monospace';
+    g.strokeText('★ OWNER ★', 256, 42);
+    g.fillStyle = '#ffd700'; g.fillText('★ OWNER ★', 256, 42);
+  }
+  g.font = 'bold 50px "Courier New", monospace';
+  g.strokeText(myName(), 256, isOwner ? 112 : 96);
+  g.fillStyle = '#ffffff'; g.fillText(myName(), 256, isOwner ? 112 : 96);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  if (!nameTag) {
+    nameTag = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+    nameTag.scale.set(3.2, 1.0, 1);
+    nameTag.position.y = 2.75;                    // just over your head
+    nameTag.renderOrder = 10;
+    player.rig.root.add(nameTag);
+  } else {
+    nameTag.material.map.dispose();
+    nameTag.material.map = tex;
+    nameTag.material.needsUpdate = true;
+  }
+}
 
 async function startLeaderboard() {
   if (lbStarted) return;
+  lbNick.value = myName();
+  drawWho();
   if (!window.claude || !window.claude.use) { drawLeaderboard(); return; }
   lbStarted = true;
   try {
     const [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
-    if (!db || !user) { drawLeaderboard(); return; }
-    lbDb = db;
+    if (!db || !user) { drawLeaderboard(); drawWho(); return; }
     lbMe = await user.id();
-    if (!stats.nick) {
+    if (!lbMe) { drawLeaderboard(); drawWho(); return; }      // signed out = a guest
+    lbDb = db;
+    const owner = await user.isOwner();
+    if (owner && !stats.ownerNamed) { stats.nick = OWNER_USERNAME; stats.ownerNamed = 1; saveStats(); }
+    if (!owner && !stats.nick) {
       const me = await user.me();
-      stats.nick = (me.name || 'PLAYER').slice(0, 16);
+      if (me.name) stats.nick = me.name.slice(0, 16);
     }
-    lbNick.value = stats.nick;
-    lbDb.collection('scores').orderBy('best', 'desc').limit(20).onSnapshot(
+    lbNick.value = myName();
+    drawWho();
+    // who the OWNER is -- only the owner can write this, so the badge can't be faked
+    if (owner) { try { await lbDb.doc('meta/owner').set({ id: lbMe }); } catch (e) {} }
+    lbDb.doc('meta/owner').onSnapshot((d) => {
+      lbOwnerId = d.exists ? d.data().id : null; drawLeaderboard();
+    }, () => {});
+    lbDb.collection('scores').orderBy('best', 'desc').limit(25).onSnapshot(
       (snap) => { lbRows = snap.docs.map(d => Object.assign({ id: d.id }, d.data())); drawLeaderboard(); },
-      () => { lbDb = null; drawLeaderboard(); });
+      () => { lbDb = null; drawLeaderboard(); drawWho(); });
     submitScore();
-  } catch (e) { lbDb = null; drawLeaderboard(); }
+  } catch (e) { lbDb = null; drawLeaderboard(); drawWho(); }
 }
 
 // Send your best -- only when it actually changed.
 async function submitScore() {
+  drawWho();
   if (!lbDb || !lbMe || lbReadOnly) return;
-  const body = { nick: String(stats.nick || 'PLAYER').slice(0, 16),
+  const body = { nick: myName(),
                  best: stats.bossProgress || 0, wins: stats.bossKills || 0,
+                 kills: stats.kills || 0, set: bestMoveset(),
                  dungeon: stats.dungeonBest || 0, combo: stats.bestCombo || 0 };
   const key = JSON.stringify(body);
   if (key === lbSent) return;
@@ -6242,29 +6344,69 @@ function drawLeaderboard() {
   lbEl.textContent = '';
   const note = (t) => { const d = document.createElement('div'); d.className = 'lbnote'; d.textContent = t; lbEl.appendChild(d); };
   if (!lbDb) {
-    lbNick.parentElement.style.display = 'none';
-    note('The leaderboard is in the ONLINE version of the game.');
+    note(isOwner ? 'The shared leaderboard is in the REAL game -- open it there to see everyone.'
+       : isGuest() ? 'You\'re playing as a GUEST. The shared leaderboard is for players signed in on the online version -- your progress still saves on this device.'
+                   : 'The leaderboard is in the ONLINE version of the game.');
     return;
   }
-  lbNick.parentElement.style.display = lbReadOnly ? 'none' : 'flex';
+  const head = document.createElement('div');
+  head.className = 'lbrow lbtop';
+  for (const c of ['#', 'PLAYER', 'BOSS', 'BEATEN', 'KILLS', 'BEST MOVESET']) {
+    const sp = document.createElement('span'); sp.textContent = c; head.appendChild(sp);
+  }
+  lbEl.appendChild(head);
   if (!lbRows.length) note('Nobody on the board yet. Beat a boss to be first!');
   lbRows.forEach((r, i) => {
     const row = document.createElement('div');
-    row.className = 'lbrow' + (r.id === lbMe ? ' me' : '');
+    const isOwnerRow = lbOwnerId && r.id === lbOwnerId;
+    row.className = 'lbrow' + (r.id === lbMe ? ' me' : '') + (isOwnerRow ? ' owner' : '');
     const cells = ['#' + (i + 1), String(r.nick || 'PLAYER'),
-                   'boss ' + (r.best || 0), (r.wins || 0) + ' wins'];
-    for (const c of cells) { const sp = document.createElement('span'); sp.textContent = c; row.appendChild(sp); }
+                   String(r.best || 0), String(r.wins || 0), String(r.kills || 0), String(r.set || '-')];
+    cells.forEach((c, k) => {
+      const sp = document.createElement('span');
+      if (k === 1 && isOwnerRow) {                // OWNER title on top of the name
+        const t = document.createElement('div');
+        t.textContent = '★ OWNER ★';
+        t.style.cssText = 'font-size:9px;letter-spacing:2px;';
+        const n = document.createElement('div');
+        n.textContent = c;
+        sp.append(t, n);
+      } else sp.textContent = c;
+      row.appendChild(sp);
+    });
     lbEl.appendChild(row);
   });
   if (lbReadOnly) note('You can see the board, but you need Contributor access to post your score.');
 }
 lbNick.addEventListener('change', () => {
-  stats.nick = lbNick.value.trim().slice(0, 16) || 'PLAYER';
+  stats.nick = lbNick.value.trim().slice(0, 16) || defaultName();
   lbNick.value = stats.nick;
   saveStats();
   submitScore();
 });
 setTimeout(startLeaderboard, 300);
+
+// ================================ SIDE MENU ================================
+// Buttons down the left edge: leaderboard, inventory, shop, movesets, daily
+// boss. (Phones and tablets get their own row of buttons instead.)
+(function buildSideMenu() {
+  if (matchMedia('(pointer: coarse)').matches) return;
+  const menu = document.createElement('div');
+  menu.style.cssText = 'position:fixed;left:12px;top:50%;transform:translateY(-50%);z-index:15;' +
+                       'display:flex;flex-direction:column;gap:6px;pointer-events:auto;';
+  const press = (key) => dispatchEvent(new KeyboardEvent('keydown', { key }));
+  for (const [label, key] of [['TOP PLAYERS', 'l'], ['INVENTORY', 'v'], ['SHOP', 'k'],
+                              ['MOVESETS', 't'], ['DAILY BOSS', 'j']]) {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.style.cssText = 'font:bold 11px "Courier New",monospace;color:#fff;background:rgba(0,0,0,.55);' +
+                      'border:2px solid rgba(255,224,102,.8);border-radius:7px;padding:6px 8px;cursor:pointer;text-align:left;';
+    b.addEventListener('mousedown', (e) => e.stopPropagation());
+    b.addEventListener('click', (e) => { e.preventDefault(); b.blur(); press(key); });
+    menu.appendChild(b);
+  }
+  document.body.appendChild(menu);
+})();
 
 function drawBoard() {
   const rows = [
@@ -6502,6 +6644,7 @@ function giveOwnerStuff() {
     if (user && await user.isOwner()) {
       isOwner = true;
       giveOwnerStuff();
+      drawWho();
       banner('WELCOME BACK, OWNER!  EVERY MOVESET IS YOURS.');
     }
   } catch (e) { /* not online, or no viewer -- a normal player */ }
