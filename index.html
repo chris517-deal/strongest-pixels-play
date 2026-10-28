@@ -845,6 +845,34 @@ const MOVESETS = {
     }},
   },
 
+  // ======================== AIRBENDING GOD ========================
+  //  Dropped by THE GOD DRAGON, the last boss in the game. Every single
+  //  move does "infinite" damage (999 trillion -- the biggest number that
+  //  won't break the game). You FLY. And the ultimate fires 1,000 slashes.
+  airbender: {
+    label: 'AIRBENDING GOD', bodyColor: 0xe8fff8, fly: true,
+    moves: {
+      // a fan of wind blades, flying out across the whole arena
+      q: { spikes:14, projectile:'wind', name:'WIND SLASH', cd:0.5, dmg:999999999999999, wind:0.06, reach:60.0, arc:6.3, knock:40, lift:10, anim:'cast', fx:'spark', color:0xe8fff8 },
+      // launches them into the sky on a tornado
+      e: { name:'SKY UPPERCUT',   cd:1.0, dmg:999999999999999, wind:0.08, reach:10.0, arc:6.3, knock:30, lift:160, anim:'upper', fx:'shock', color:0xccfff0, quake:30 },
+      // three GIANT HURRICANES that shred everything they pass through
+      r: { spikes:3, projectile:'hurricane', name:'GIANT HURRICANE', cd:2.0, dmg:999999999999999, wind:0.20, reach:60.0, arc:6.3, knock:80, lift:40, anim:'spin', fx:'shock', color:0xccfff0, storm:10 },
+      f: { name:'AIR DASH',       cd:0.2, dmg:999999999999999, wind:0.0,  reach:8.0, arc:6.3, knock:50, lift:20, dash:110, anim:'dash', fx:'trail', color:0xe8fff8 },
+      c: { name:'WIND WALL',      cd:1.5, dmg:999999999999999, wind:0.05, reach:10.0, arc:6.3, knock:90, lift:40, anim:'grab', fx:'ring', color:0xffffff, guard:1.0 },
+      x: { name:'GALE STEP',      cd:0.6, dmg:999999999999999, wind:0.05, reach:10.0, arc:6.3, knock:60, lift:50, anim:'backstab', fx:'spark', color:0xe8fff8, behind:true },
+    },
+    ultimate: { name:'THOUSAND SLASHES', duration:40, bodyColor:0xffffff, moves:{
+      // ONE THOUSAND wind slashes
+      q: { spikes:1000, projectile:'wind', name:'THOUSAND SLASHES', cd:2.5, dmg:999999999999999, wind:0.05, reach:60.0, arc:6.3, knock:40, lift:10, anim:'barrage', fx:'spark', color:0xffffff },
+      // beams of wind blast down out of the sky onto them
+      e: { skybeam:12, name:'HEAVEN SPLITTER', cd:1.5, dmg:999999999999999, wind:0.10, reach:60.0, arc:6.3, knock:60, lift:60, anim:'cast', fx:'shock', color:0xe8fff8 },
+      // SEVEN giant hurricanes and a lightning storm
+      r: { spikes:7, projectile:'hurricane', storm:30, name:'HURRICANE GOD', cd:2.0, dmg:999999999999999, wind:0.15, reach:60.0, arc:6.3, knock:120, lift:80, anim:'spin', fx:'shock', color:0xffffff },
+      f: { name:'WIND GOD DASH',  cd:0.15, dmg:999999999999999, wind:0.0, reach:10.0, arc:6.3, knock:70, lift:30, dash:140, anim:'dash', fx:'trail', color:0xffffff },
+    }},
+  },
+
   // ====================== THE ULTIMATE GOD =========================
   //  You cannot buy this, farm this, or find it on a boss. The ONLY way to
   //  get it is to clear the whole DUNGEON without dying once.
@@ -1060,6 +1088,15 @@ const MOVESETS = {
     e:{ name:'Reflect Rise', cd:2.4, dmg:60, wind:0.30, reach:4.2, arc:1.5, knock:16, lift:30, anim:'upper', fx:'spark', color:0xffffff },
     f:{ name:'Glass Dash',   cd:3.0, dmg:40, wind:0.20, reach:4.0, arc:6.3, knock:18, lift:6,  dash:40, anim:'dash', fx:'trail', color:0xdff6ff },
     r:{ name:'MIRROR CRASH', cd:5.0, dmg:80, wind:0.56, reach:30.0,arc:6.3, knock:56, lift:20, anim:'slam',  fx:'shock', color:0x9fe8ff, spikes:8 } } },
+
+  // THE GOD DRAGON -- flies, rains beams of energy down from the sky, and
+  // dive-bombs you out of the clouds.
+  m_goddragon:{ label:'GOD DRAGON', bodyColor:0xffd24a, moves:{
+    q:{ name:'SKY BEAMS',      cd:2.0, dmg:160, wind:0.50, reach:60.0, arc:6.3, knock:30, lift:20, anim:'cast',  fx:'shock', color:0xffe066, skybeam:4 },
+    e:{ name:'DIVE BOMB',      cd:3.0, dmg:200, wind:0.40, reach:12.0, arc:2.2, knock:50, lift:30, anim:'headbutt', fx:'shock', color:0xffd24a, dash:55, quake:30 },
+    r:{ name:'GOD BREATH',     cd:4.5, dmg:240, wind:0.60, reach:40.0, arc:1.4, knock:60, lift:24, anim:'cast',  fx:'shock', color:0xfff4c0, laser:true, twin:true, storm:20 },
+    f:{ name:'HEAVEN FALL',    cd:6.0, dmg:180, wind:0.70, reach:60.0, arc:6.3, knock:40, lift:30, anim:'slam',  fx:'shock', color:0xffffff, skybeam:9 },
+    x:{ name:'METEOR TALONS',  cd:3.5, dmg:150, wind:0.40, reach:45.0, arc:6.3, knock:40, lift:22, anim:'upper', fx:'spark', color:0xffe066, spikes:14 } } },
 
   m_crab:     { label:'CRAB', bodyColor:0xd94a2a, moves:{
     // SLAMS its claws down, tearing up the floor
@@ -1608,9 +1645,22 @@ BOSSES.push({
   attackEvery: 0.32, body: 'deathgod', reads: true,
   moveset: 'm_god', unlocks: 'guru', enrageAt: 0.60, enrageBoost: 2.6,
   // THE HARDEST FIGHT IN THE GAME:
-  armor: 0.01,      // takes only 1% of every hit
+  armor: 0.5,       // its armour blocks HALF of every hit
   noChip: true,     // no "every hit takes a little bit" -- weak moves barely scratch it
   power: 1.6,       // hits 60% harder from the very start
+});
+
+// ======================= THE GOD DRAGON =======================
+// THE TRUE FINAL BOSS -- number 258. Long ago it beat the ULTIMATE GOD,
+// back when he was still just a warrior. Then it died... and came back as a
+// GOD. It flies high over the arena, rains giant beams of energy down on
+// you, and dive-bombs you out of the sky. Beat it for AIRBENDING GOD.
+BOSSES.push({
+  name: 'THE GOD DRAGON', hp: 250000000 / BOSS_HP_MULT, size: 1.6, speed: 16.0,
+  attackEvery: 0.30, body: 'goddragon', reads: true, fly: 7,
+  moveset: 'm_goddragon', unlocks: 'airbender', enrageAt: 0.50, enrageBoost: 2.8,
+  armor: 0.5, noChip: true, power: 2.0,
+  lore: 'IT BEAT THE ULTIMATE GOD WHEN HE WAS ONLY A WARRIOR. THEN IT DIED... AND CAME BACK AS A GOD.',
 });
 
 // ===========================================================================
@@ -1621,7 +1671,10 @@ BOSSES.push({
 //  it -- beat the SHADOW SMITH, get SHADOW SMITH -- using that boss's own
 //  move names, and stronger the deeper into the gauntlet it is.
 // ===========================================================================
-(function everyBossDropsAMoveset() { return;   // not finished yet
+// NOT FINISHED YET -- switched off. Change false to true to try it.
+const EVERY_BOSS_DROPS_A_MOVESET = false;
+(function everyBossDropsAMoveset() {
+  if (!EVERY_BOSS_DROPS_A_MOVESET) return;
   // the same "spare" rule handOutMovesets uses, so we know who it covers
   const taken = new Set(BOSSES.map(b => b.unlocks).filter(Boolean));
   ['fists', 'god', 'skeletongod'].forEach(id => taken.add(id));
@@ -1776,6 +1829,7 @@ const HAND_PICKED = new Set(['barrage','cast','bite','kick','stomp','spin',
   taken.add('fists');                                  // you start with it
   taken.add('god');    // ULTIMATE GOD is dungeon-only. No boss ever drops it.
   taken.add('skeletongod');   // crafted from the 5 bone relics, never dropped
+  taken.add('airbender');     // only THE GOD DRAGON drops it
 
   const spare = Object.keys(MOVESETS)
     .filter(id => !id.startsWith('m_') && !/^g\d+$/.test(id) && !taken.has(id))
@@ -1937,6 +1991,13 @@ const ITEMS = [
     desc:'ULTIMATE fills 50% faster' },
   { id:'a_thorns', name:'THORN AURA',   kind:'aura', ability:'thorns', cost:200, color:0x2aaa6a,
     desc:'attackers get hurt back' },
+
+  // ---------------------------------------------------- OWNER ONLY
+  // Only the OWNER of the game ever sees this -- like a Roblox game owner's
+  // powers. 999 MILLION health and 10x damage. Press OPTION to switch it off
+  // before a boss fight (so it's actually a fight), and OPTION again for on.
+  { id:'a_admin',  name:'ADMIN AURA',   kind:'aura', ability:'admin',  cost:0,   color:0xffd700,
+    ownerOnly: true, desc:'OWNER ONLY: 999 million health, 10x damage. OPTION = on/off' },
 ];
 
 return { MOVESETS, BOSSES, STARTING_MOVESETS, PLAYER_HP, DUMMY_HP, BOSS_HP_MULT, DAMAGE_TO_BOSS, MIN_BOSS_CHIP, BOSS_DAMAGE_MULT, LOOK, ULT_HITS_TO_FILL, HEAL_PER_SECOND, KILL_UNLOCKS, AVATARS, MAX_COOLDOWN, M1, ITEMS, INVENTORY_SLOTS, IS_OWNER };
@@ -3158,7 +3219,49 @@ function makeBoneFist(scale, glow) {
   return g;
 }
 
+const WIND_GEO = new THREE.TorusGeometry(0.7, 0.07, 4, 12, Math.PI);
+const WIND_MAT = new THREE.MeshBasicMaterial({ color: 0xe8fff8, transparent: true, opacity: 0.8 });
+const HURRICANE_GEO = new THREE.ConeGeometry(2.6, 7, 14, 1, true);
 function spawnSpikes(actor, move, target) {
+  if (move.projectile === 'wind') {               // WIND SLASHES: a storm of crescent blades
+    const n = move.spikes || 20;
+    const up = new THREE.Vector3(0, 1, 0);
+    const per = Math.max(1, Math.ceil(n / 60));   // fire them in ~60 quick waves
+    for (let w = 0; w < Math.ceil(n / per); w++) {
+      setTimeout(() => {
+        if (actor.gone > 0) return;
+        for (let k = 0; k < per; k++) {
+          const dir = new THREE.Vector3(Math.sin(actor.yaw), 0, Math.cos(actor.yaw))
+            .applyAxisAngle(up, (Math.random() - 0.5) * 0.7).normalize();
+          const m = new THREE.Mesh(WIND_GEO, WIND_MAT);
+          m.position.copy(actor.pos).addScaledVector(dir, 1.4 * actor.size)
+                   .setY(0.6 + Math.random() * 2.4 * actor.size);
+          m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
+          m.rotation.z = Math.random() * Math.PI;
+          scene.add(m);
+          spikes.push({ mesh: m, dir, actor, move, target, life: 1.1, speed: 95, fist: true, shared: true });
+        }
+        if (actor === player && w % 4 === 0) SFX.swing();
+      }, w * 30);
+    }
+    return;
+  }
+  if (move.projectile === 'hurricane') {          // GIANT HURRICANES that tear through everything
+    const n = move.spikes || 3;
+    const up = new THREE.Vector3(0, 1, 0);
+    for (let i = 0; i < n; i++) {
+      const dir = new THREE.Vector3(Math.sin(actor.yaw), 0, Math.cos(actor.yaw))
+        .applyAxisAngle(up, (i - (n - 1) / 2) * 0.35).normalize();
+      const m = new THREE.Mesh(HURRICANE_GEO, new THREE.MeshBasicMaterial({
+        color: 0xccfff0, transparent: true, opacity: 0.55, side: THREE.DoubleSide }));
+      m.rotation.x = Math.PI;                     // a funnel, point down
+      m.position.copy(actor.pos).addScaledVector(dir, 3).setY(3.5);
+      scene.add(m);
+      spikes.push({ mesh: m, dir, actor, move, target, life: 3.0, speed: 20, hurricane: true, hitCd: 0 });
+    }
+    shake = Math.min(1, shake + 0.4);
+    return;
+  }
   if (move.projectile === 'fist') {               // BONE BARRAGE: a fast stream of fists
     const n = move.spikes || 8;
     const up = new THREE.Vector3(0, 1, 0);
@@ -3203,6 +3306,20 @@ function stepSpikes(dt) {
   for (let i = spikes.length - 1; i >= 0; i--) {
     const s = spikes[i];
     s.mesh.position.addScaledVector(s.dir, (s.speed || 38) * dt);
+    if (s.hurricane) {
+      s.mesh.rotation.y += 9 * dt;
+      s.life -= dt; s.hitCd -= dt;
+      const t = s.target, p = s.mesh.position;
+      if (t && t.gone <= 0 && s.hitCd <= 0 &&
+          Math.hypot(t.pos.x - p.x, t.pos.z - p.z) < 3 + 0.6 * t.size) {
+        dealDamage(s.actor, s.move, t, t.pos.clone().setY(t.pos.y + 1.4 * t.size));
+        s.hitCd = 0.25;                           // keeps shredding while it's on them
+      }
+      if (s.life <= 0 || Math.abs(p.x) > ARENA + 5 || Math.abs(p.z) > ARENA + 5) {
+        scene.remove(s.mesh); s.mesh.material.dispose(); spikes.splice(i, 1);
+      }
+      continue;
+    }
     if (!s.fist) s.mesh.rotation.z += 6 * dt;
     s.life -= dt;
 
@@ -3221,7 +3338,7 @@ function stepSpikes(dt) {
 
     if (done) {
       scene.remove(s.mesh);
-      if (s.mesh.material) s.mesh.material.dispose();
+      if (s.mesh.material && !s.shared) s.mesh.material.dispose();
       spikes.splice(i, 1);
     }
   }
@@ -5212,6 +5329,103 @@ function makeDeathGod() {
                    { mat: eyeMat, col: new THREE.Color(0xff2244), amp: 0.4, speed: 2.5 }] };
 }
 
+// ------------------------------------------------------- THE GOD DRAGON
+// The final boss. Long ago it beat the ULTIMATE GOD, back when he was still
+// just a warrior. Then it died -- and came back as a GOD. A golden dragon
+// with glowing wings, a crown of horns and a halo of light. It FLIES.
+function makeGodDragon() {
+  const rig = makeDragon();
+  const gold = (m, hex, glow) => {
+    const c = m.clone();
+    c.color.setHex(hex);
+    if (c.emissive) { c.emissive.setHex(glow || 0x000000); c.emissiveIntensity = glow ? 0.35 : 0; }
+    c.metalness = 0.55; c.roughness = 0.35;
+    return c;
+  };
+  rig.root.traverse((o) => {
+    if (!o.isMesh || !o.material || Array.isArray(o.material)) return;
+    const m = o.material;
+    if (m.side === THREE.DoubleSide) o.material = gold(m, 0xfff1c0, 0xffb020);   // glowing wings
+    else if (m.map) o.material = gold(m, 0xffd24a, 0x553300);                     // golden scales
+    else o.material = gold(m, 0xfffaf0);                                           // white-gold horns
+  });
+  const light = new THREE.MeshBasicMaterial({ color: 0xffffaa });
+  const head = rig.head;
+  // glowing eyes and a crown of horns on the skull
+  for (const sx of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.1), light);
+    eye.position.set(sx * 0.32, 0.18, 0.55);
+    head.add(eye);
+    for (let k = 0; k < 3; k++) {
+      const h = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.9 - k * 0.2, 5),
+                               new THREE.MeshStandardMaterial({ color: 0xfffaf0, metalness: 0.6, roughness: 0.3 }));
+      h.position.set(sx * (0.2 + k * 0.18), 0.6, -0.1 - k * 0.15);
+      h.rotation.set(-0.5, 0, sx * -0.35);
+      head.add(h);
+    }
+  }
+  // a halo of light floating over its head
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.09, 8, 40), light);
+  halo.position.set(0, 1.5, -0.3);
+  halo.rotation.x = Math.PI / 2;
+  head.add(halo);
+  rig.spinners = [{ obj: halo, axis: 'z', speed: 2.2 }];
+  rig.pulse = [{ mat: light, col: new THREE.Color(0xffffaa), amp: 0.3, speed: 3 }];
+  return rig;
+}
+
+// ------------------------------------------------------- SKY BEAMS
+// A red ring appears on the ground -- then a giant beam of energy blasts
+// down out of the sky on that spot. Get out of the ring!
+const skybeams = [];
+const BEAM_GEO = new THREE.CylinderGeometry(2.2, 2.2, 80, 16, 1, true);
+function spawnSkyBeams(actor, move, target) {
+  const n = move.skybeam || 3;
+  for (let i = 0; i < n; i++) {
+    // the first one is right on you, the rest land round you
+    const a = Math.random() * Math.PI * 2, r = i === 0 ? 0 : 3 + Math.random() * 7;
+    const x = THREE.MathUtils.clamp(target.pos.x + Math.cos(a) * r, -ARENA, ARENA);
+    const z = THREE.MathUtils.clamp(target.pos.z + Math.sin(a) * r, -ARENA, ARENA);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1.9, 2.4, 32),
+      new THREE.MeshBasicMaterial({ color: 0xff2a2a, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(x, 0.08, z);
+    scene.add(ring);
+    skybeams.push({ x, z, ring, beam: null, warn: 0.9 + i * 0.12, life: 0.45, actor, move, target, hit: false });
+  }
+}
+function stepSkyBeams(dt) {
+  for (let i = skybeams.length - 1; i >= 0; i--) {
+    const b = skybeams[i];
+    if (b.warn > 0) {
+      b.warn -= dt;
+      b.ring.material.opacity = 0.5 + Math.sin(b.warn * 30) * 0.35;      // flashing warning
+      if (b.warn <= 0) {
+        b.beam = new THREE.Mesh(BEAM_GEO, new THREE.MeshBasicMaterial({
+          color: b.move.color || 0xffe066, transparent: true, opacity: 0.85 }));
+        b.beam.position.set(b.x, 40, b.z);
+        scene.add(b.beam);
+        shatterGround(new THREE.Vector3(b.x, 0, b.z), 10, 12);
+        shake = Math.min(1, shake + 0.4);
+        SFX.hit(0.9);
+        const t = b.target;
+        if (t && t.gone <= 0 && Math.hypot(t.pos.x - b.x, t.pos.z - b.z) < 2.6) {
+          dealDamage(b.actor, b.move, t, t.pos.clone().setY(t.pos.y + 1.2));
+        }
+      }
+      continue;
+    }
+    b.life -= dt;
+    b.beam.material.opacity = Math.max(0, b.life * 2);
+    b.beam.scale.x = b.beam.scale.z = 1 + (0.45 - b.life);
+    if (b.life <= 0) {
+      scene.remove(b.ring); scene.remove(b.beam);
+      b.ring.material.dispose(); b.beam.material.dispose();
+      skybeams.splice(i, 1);
+    }
+  }
+}
+
 // Animates the extra parts above. Called every frame for the boss.
 function stepExtras(rig, elapsed) {
   if (rig.pulse) for (const p of rig.pulse) {
@@ -5253,6 +5467,7 @@ function makeBossRig(def) {
   if (def.body === 'reaper')   return makeReaper();
   if (def.body === 'mirror')   return makeMirror();
   if (def.body === 'deathgod') return makeDeathGod();
+  if (def.body === 'goddragon') return makeGodDragon();
   return makeFighter(TEX.rock, TEX.rock, TEX.rock, TEX.bossFace);
 }
 
@@ -5379,6 +5594,9 @@ function spawnFx(kind, at, color) {
 // 1000000 -> "1M", 15650 -> "15.6K"  so huge hits still fit on screen
 function shortNum(n) {
   if (typeof n !== 'number') return n;
+  if (n >= 1e14) return '\u221e';                               // "infinite" damage
+  if (n >= 1e12) return +(n / 1e12).toFixed(1) + 'T';
+  if (n >= 1e9) return +(n / 1e9).toFixed(1) + 'B';
   if (n >= 1e6) return +(n / 1e6).toFixed(n % 1e6 ? 1 : 0) + 'M';
   if (n >= 1e4) return +(n / 1e3).toFixed(n % 1e3 ? 1 : 0) + 'K';
   return String(n);
@@ -5502,6 +5720,7 @@ addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if ('qerfcx'.includes(k) && k.length === 1) playerMove(k);
   if (k === 'u') goUltimate();           // U = ULTIMATE
+  if (e.code === 'AltLeft' || e.code === 'AltRight') { e.preventDefault(); toggleAdminAura(); }   // OPTION
   if (k === 'v') toggleInventory();      // V = the inventory
   if (k === 'h') showHelp();
   const setIdx = '1234567890-=[]\\;\',./'.indexOf(k);
@@ -5765,11 +5984,33 @@ function equippedItems() {
 // Which abilities you have on right now -- what the fight code asks about.
 let gear = new Set();
 function refreshGear() {
-  gear = new Set(equippedItems().map(id => ITEMS.find(it => it.id === id).ability));
+  gear = new Set(equippedItems().map(id => ITEMS.find(it => it.id === id))
+                   .filter(it => !it.ownerOnly || isOwner).map(it => it.ability));
   equipWeapon();
   refreshAura();
+  applyAdminAura();
 }
-function has(ability) { return gear.has(ability); }
+function has(ability) {
+  if (ability === 'admin') return gear.has('admin') && isOwner && !adminAuraOff;
+  return gear.has(ability);
+}
+// OPTION switches the ADMIN AURA off and on (it stays equipped either way).
+let adminAuraOff = false;
+const ADMIN_HP = 999000000;
+let normalMaxHp = null;
+function applyAdminAura() {
+  if (normalMaxHp === null) normalMaxHp = player.maxHp;
+  const on = has('admin');
+  player.maxHp = on ? ADMIN_HP : normalMaxHp;
+  player.hp = on ? ADMIN_HP : Math.min(player.hp, player.maxHp);
+}
+function toggleAdminAura() {
+  if (!isOwner || !gear.has('admin')) return;
+  adminAuraOff = !adminAuraOff;
+  applyAdminAura();
+  refreshAura();
+  banner(adminAuraOff ? 'ADMIN AURA OFF -- NOW IT\'S A REAL FIGHT!' : 'ADMIN AURA ON');
+}
 
 // Why can't this go on? null means it can.
 function cantEquip(it) {
@@ -5782,7 +6023,7 @@ function cantEquip(it) {
 
 function clickItem(id) {
   const it = ITEMS.find(v => v.id === id);
-  if (!it) return;
+  if (!it || (it.ownerOnly && !isOwner)) return;
   const eq = equippedItems();
   if (eq.includes(id)) {                               // take it off
     eq.splice(eq.indexOf(id), 1);
@@ -5861,7 +6102,7 @@ function drawInventory() {
   if (old) old.remove();
   const box = craftBox();
   if (box) invEquip.insertAdjacentHTML('beforebegin', '<div class="craftbox">' + box + '</div>');
-  invGrid.innerHTML = ITEMS.map(it => itemTile(it)).join('');
+  invGrid.innerHTML = ITEMS.filter(it => !it.ownerOnly || isOwner).map(it => itemTile(it)).join('');
 }
 
 function toggleInventory() {
@@ -5886,6 +6127,8 @@ function refreshAura() {
   const aura = equippedItems().map(id => ITEMS.find(x => x.id === id)).find(x => x.kind === 'aura');
   auraRing.visible = !!aura;
   if (aura) auraRing.material.color.setHex(aura.color);
+  // the ADMIN AURA ring is gold and bigger -- and vanishes when it's switched off
+  if (aura && aura.ability === 'admin') auraRing.visible = !adminAuraOff;
 }
 function fightCoins() { return Math.max(0, (stats.coinsEarned || 0) - spentPoints()); }
 
@@ -6223,6 +6466,25 @@ function throwM1() {
 let comboCount = 0;    // how many punches you've landed in a row
 let comboShow = 0;     // how long the counter stays on screen
 
+// ============================== THE OWNER ==============================
+// You're the owner if movesets.js says so (your own computer / your private
+// copy) -- OR, in the online Claude version, if Claude confirms you're the
+// person who OWNS the game. That one can't be faked with a link: Claude
+// checks who you're signed in as. Owners get the admin panel and the
+// ADMIN AURA. Everybody else gets the normal game.
+let isOwner = IS_OWNER;
+(async function checkRealOwner() {
+  try {
+    if (isOwner || !window.claude || !window.claude.use) return;
+    const user = await window.claude.use('user');
+    if (user && await user.isOwner()) {
+      isOwner = true;
+      buildBar();                                  // adds the secret admin corner
+      banner('WELCOME BACK, OWNER!');
+    }
+  } catch (e) { /* not online, or no viewer -- a normal player */ }
+})();
+
 // ============================ SECRET ADMIN PANEL ============================
 // ONLY for the owner's browsers that were already set up (the secret link
 // that set them up has been removed). For everybody else none of this
@@ -6256,7 +6518,7 @@ function allMovesetIds() {
 }
 
 function toggleAdmin() {
-  if (!IS_OWNER) return;
+  if (!isOwner) return;
   if (!adminEl) buildAdmin();
   const open = adminEl.style.display === 'block';
   if (!open) { releaseMouse(); drawAdmin(); }
@@ -6290,6 +6552,15 @@ function buildAdmin() {
     if (a === 'fly')  { admin.fly = !admin.fly; banner(admin.fly ? 'FLYING ON (hold SPACE)' : 'FLYING OFF'); }
     if (a === 'god')  { admin.god = !admin.god; banner(admin.god ? 'CAN\'T BE HURT' : 'CAN BE HURT AGAIN'); }
     if (a === 'ult')  { ultMeter = 1; banner('ULTIMATE FULL -- PRESS U'); }
+    if (a === 'armyset') {                      // make the army EXACTLY this many
+      const want = Math.max(0, parseInt(adminEl.querySelector('#adminarmy').value, 10) || 0);
+      while (minions.length > want) { const m = minions.pop(); scene.remove(m.rig.root); }
+      if (minions.length < want && MOVESETS.skeletongod) {
+        summonMinions(want - minions.length, MOVESETS.skeletongod.moves.r, true);
+      }
+      saveArmy();
+      banner('ARMY SIZE: ' + minions.length + ' SKELETONS');
+    }
     if (a === 'army') {                         // STRESS TEST: 50 skeletons at once
       const raise = (MOVESETS.skeletongod && MOVESETS.skeletongod.moves.r) || active.moves.q;
       summonMinions(50, raise);
@@ -6323,6 +6594,10 @@ function drawAdmin() {
     btn('god', "CAN'T BE HURT: " + (admin.god ? 'ON' : 'OFF'), admin.god) +
     btn('ult', 'FILL ULTIMATE') +
     btn('army', '+50 SKELETONS (stress test)') +
+    `<div style="display:flex;gap:6px;align-items:center;margin:6px 0">` +
+    `<input id="adminarmy" type="number" min="0" value="${minions.length}" ` +
+    `style="width:80px;padding:6px;font:13px 'Courier New',monospace">` +
+    `<div style="flex:1">${btn('armyset', 'SET ARMY SIZE')}</div></div>` +
     btn('heal', 'HEAL ME  (and put the boss on 1 HP)') +
     `<div style="display:flex;gap:6px;align-items:center;margin:6px 0">` +
     `<input id="adminboss" type="number" min="1" max="${BOSSES.length}" value="${stats.bossProgress + 1}" ` +
@@ -6385,6 +6660,7 @@ function endUltimate() {
 function landHit(actor, move, target, aimYaw) {
   if (move.summon && actor === player) summonMinions(move.summon, move);
   if (!target || target.gone > 0) return;
+  if (move.skybeam) { spawnSkyBeams(actor, move, target); return; }
 
   const yaw = aimYaw === undefined ? actor.yaw : aimYaw;
   const facing = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
@@ -6438,7 +6714,11 @@ function landHit(actor, move, target, aimYaw) {
   // reach means reach -- what movesets.js says, goes (the DOOM BLADE adds 35%)
   const reach = move.reach * (actor === player && has('reach') ? 1.35 : 1);
 
-  const inRange = dist <= reach &&
+  // A boss can only hit you if you're near its HEIGHT too -- fly high enough
+  // over it (ULTIMATE GOD) and its swings, slams and beams pass under you.
+  const tooHigh = target === player && actor !== player &&
+                  (target.pos.y - actor.pos.y) > 2.2 * actor.size + 1.5;
+  const inRange = dist <= reach && !tooHigh &&
                   (dist < 0.01 || facing.angleTo(to.clone().normalize()) <= move.arc / 2);
 
   if (!inRange || move.dmg <= 0) {
@@ -6509,6 +6789,7 @@ function dealDamage(actor, move, target, at, pushDir) {
 
   let dmg = Math.round(move.dmg * actor.damageScale);     // enraged bosses hit harder
   if (actor === player && has('sharp')) dmg = Math.round(dmg * 1.2);       // IRON SWORD
+  if (actor === player && has('admin')) dmg = Math.round(dmg * 10);        // ADMIN AURA
   // Bosses are ARMOURED. Only a fraction of your hit gets through, which is
   // what turns a boss from a punching bag into an actual fight. The dummy is
   // deliberately left alone -- it's for practice, so it takes the full hit.
@@ -6836,6 +7117,7 @@ const SCENES = {
   void:     { sky: 0x3a1450, fog: 0x1e0a2e, sun: 0xcc88ff, ground: 0x60507a, hemi: 0x8844cc, sunI: 1.7, floor: 'crystal' },
   mirror:   { sky: 0xd0ecff, fog: 0xdcf2ff, sun: 0xffffff, ground: 0xc0e0ea, hemi: 0xe8f8ff, floor: 'crystal' },
   crab:     { sky: 0x6aaae0, fog: 0x5a8ac0, sun: 0xffd8b0, ground: 0xf0e0a8, hemi: 0xa8d0ff, floor: 'sand' },
+  goddragon:{ sky: 0xfff0c0, fog: 0xfff2d0, sun: 0xffffff, ground: 0xffffff, hemi: 0xfff4d0, sunI: 4.0, floor: 'snow' },
   deathgod: { sky: 0x6a0a18, fog: 0x30060c, sun: 0xff4a4a, ground: 0x6a4040, hemi: 0xaa2222, sunI: 1.9, floor: 'lavarock' },
 };
 const sceneNow = {}, sceneTo = {};
@@ -6895,7 +7177,21 @@ function makeSkeletonRig() {
   rig.torso.material.color.setHex(0xd8cfb8);
   return rig;
 }
-function summonMinions(n, move) {
+// THE OWNER'S ARMY IS SAVED: how many skeletons you have is remembered, so
+// refreshing the page (or an update) doesn't wipe the army you built.
+const START_ARMY = 0;          // how many an owner starts with on a fresh save
+function saveArmy() {
+  if (!isOwner) return;
+  try { localStorage.setItem('sp-army', String(minions.length)); } catch (e) {}
+}
+function loadArmy() {
+  if (!isOwner) return;
+  let n = START_ARMY;
+  try { const v = localStorage.getItem('sp-army'); if (v !== null) n = parseInt(v, 10) || 0; } catch (e) {}
+  if (n > 0 && MOVESETS.skeletongod) summonMinions(n, MOVESETS.skeletongod.moves.r, true);
+}
+
+function summonMinions(n, move, quiet) {
   for (let i = 0; i < n; i++) {
     if (minions.length >= MAX_MINIONS) {             // the oldest crumbles first
       const old = minions.shift();
@@ -6909,15 +7205,16 @@ function summonMinions(n, move) {
     m.rig.root.position.copy(m.pos);
     m.punch = { minion: true, name: move.name + ' (minion)', dmg: Math.max(1, Math.round(move.dmg * 0.35)),
                 knock: 4, lift: 2, color: 0xcc66ff, fx: 'spark', anim: 'punch' };
-    spawnBits(m.pos.clone().setY(0.3), 0xd8cfb8, 18, 6);
+    if (!quiet) spawnBits(m.pos.clone().setY(0.3), 0xd8cfb8, 18, 6);
     minions.push(m);
   }
-  banner('RISE, MY MINIONS!');
+  banner(quiet ? 'YOUR ARMY OF ' + minions.length + ' SKELETONS IS BACK!' : 'RISE, MY MINIONS!');
+  saveArmy();
 }
 // OWNER-ONLY STRESS-TEST COUNTER (top middle): skeletons out + frames per second.
 let perfEl = null, perfFrames = 0, perfClock = 0;
 function stepPerf(dt) {
-  if (!IS_OWNER) return;
+  if (!isOwner) return;
   if (!perfEl) {
     perfEl = document.createElement('div');
     perfEl.style.cssText = 'position:fixed;top:44px;left:50%;transform:translateX(-50%);z-index:12;' +
@@ -6943,6 +7240,7 @@ function stepMinions(dt, elapsed) {
       spawnBits(m.pos.clone().setY(1), 0xd8cfb8, 24, 6);
       scene.remove(m.rig.root);
       minions.splice(i, 1);
+      saveArmy();
       continue;
     }
     if (m.pos.y < 0) m.pos.y = Math.min(0, m.pos.y + dt * 3);     // rising up
@@ -7023,6 +7321,7 @@ function startBossFight(forced) {
   bossUi.querySelector('.label').textContent = def.daily ? def.name + '   \u2022   DAILY BOSS'
     : def.name + '   \u2022   BOSS ' + bossNumber(def) + ' / ' + BOSSES.length;
   banner(def.name + ' APPEARS!');
+  if (def.lore) setTimeout(() => { if (boss && bossDef === def) banner(def.lore); }, 2200);
   spawnFx('shock', boss.pos.clone().setY(1), 0x99785a);
 }
 
@@ -7035,6 +7334,8 @@ function endBossFight(won) {
   globs.length = 0;
   for (const pl of pools) { scene.remove(pl.mesh); pl.mesh.material.dispose(); }
   pools.length = 0;
+  for (const b of skybeams) { scene.remove(b.ring); if (b.beam) scene.remove(b.beam); }
+  skybeams.length = 0;
   bossUi.style.display = 'none';
   setScene(null);                     // back to a sunny day
   dummy.rig.root.visible = true;
@@ -7290,7 +7591,7 @@ function buildBar() {
     el.innerHTML = `<div class="key">${k.toUpperCase()}</div>
                     <div class="name">${move.name}</div>
                     <div class="cool"></div>`;
-    if (k === 'q' && IS_OWNER) addSecretCorner(el);
+    if (k === 'q' && isOwner) addSecretCorner(el);
     bar.appendChild(el);
     slots[k] = el;
   }
@@ -7299,6 +7600,7 @@ buildBar();
 checkKillUnlocks(false);      // kills you already earned count straight away
 wearAvatar(AVATARS.some(a => a.id === stats.avatar) ? stats.avatar : 'steve');
 refreshGear();
+setTimeout(loadArmy, 600);     // the owner's saved skeleton army comes back
 
 function updateHud(dt) {
   for (const k in slots) {
@@ -7655,6 +7957,7 @@ function tick() {
   const realDt = Math.min(timer.getDelta(), 0.05); // never let one slow frame explode physics
   const elapsed = timer.getElapsed();
   stepScene(realDt);                               // the sky fades to the boss's scene
+  stepSkyBeams(realDt);
   pollGamepad(realDt);                             // PS5 / Xbox controllers
   runTime += realDt;
   if ((runTime | 0) % 15 === 0 && runTime - lastStatSave > 15) {
@@ -7787,7 +8090,7 @@ function tick() {
   }
   if (auraRing.visible) {
     auraRing.position.set(player.pos.x, player.pos.y + 0.06, player.pos.z);
-    auraRing.scale.setScalar(1 + Math.sin(performance.now() / 260) * 0.08);
+    auraRing.scale.setScalar((has('admin') ? 1.6 : 1) * (1 + Math.sin(performance.now() / 260) * 0.08));
   }
   if (canFly && keys.Space && player.gone <= 0) {
     player.vel.y = Math.min(player.vel.y + 120 * dt, 16);
@@ -7808,6 +8111,13 @@ function tick() {
   if (boss) {
     bossBrain(dt);
     stepPhysics(boss, dt);
+    if (bossDef && bossDef.fly) {
+      // FLYING BOSS: cruises high in the sky, swoops down when it attacks
+      const alt = boss.busy > 0 ? 1.2 : bossDef.fly;
+      boss.pos.y += (alt - boss.pos.y) * Math.min(1, dt * (boss.busy > 0 ? 6 : 2));
+      boss.vel.y = 0; boss.onGround = false;
+      boss.rig.root.position.copy(boss.pos);
+    }
     pushOutOfRuins(boss);
     boss.rig.root.rotation.y = boss.yaw;
     stepAnim(boss, dt, boss.vel.lengthSq() > 1 && boss.onGround, elapsed);
@@ -8171,6 +8481,9 @@ window.GAME = {
   get unlocked() { return unlocked; }, get ultMeter() { return ultMeter; },
   get ultTime() { return ultTime; }, goUltimate, currentMoves,
   get minions() { return minions; },
+  // for testing attacks by hand
+  test: { spawnSpikes, stepSpikes, spawnSkyBeams, stepSkyBeams, get spikes() { return spikes; },
+          get skybeams() { return skybeams; } },
   fillUlt() { ultMeter = 1; },
   playerMove, startBossFight, switchMoveset,
   resetSave() { localStorage.removeItem('strongest-pixels-save'); location.reload(); },
