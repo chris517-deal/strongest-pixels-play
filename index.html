@@ -1603,9 +1603,14 @@ for (let i = 0; i < GAUNTLET; i++) {
 // VOID, hits for more than triple the crab, reads your attacks and dodges,
 // and uses EVERY weapon in the game at once.
 BOSSES.push({
-  name: 'THE GOD OF DEATH AND DOOM', hp: 400000, size: 2.1, speed: 12.0,
-  attackEvery: 0.42, body: 'deathgod', reads: true,
-  moveset: 'm_god', unlocks: 'guru', enrageAt: 0.60, enrageBoost: 2.2,
+  // 100 MILLION health (the game multiplies hp by BOSS_HP_MULT = 3)
+  name: 'THE GOD OF DEATH AND DOOM', hp: 100000000 / BOSS_HP_MULT, size: 2.1, speed: 15.0,
+  attackEvery: 0.32, body: 'deathgod', reads: true,
+  moveset: 'm_god', unlocks: 'guru', enrageAt: 0.60, enrageBoost: 2.6,
+  // THE HARDEST FIGHT IN THE GAME:
+  armor: 0.01,      // takes only 1% of every hit
+  noChip: true,     // no "every hit takes a little bit" -- weak moves barely scratch it
+  power: 1.6,       // hits 60% harder from the very start
 });
 
 // ===========================================================================
@@ -1768,6 +1773,10 @@ function ownerOnly() {
   // this on from a link any more. A browser that already had it switched on
   // before keeps it; every other browser is a normal player.
   try {
+    // Playing on YOUR OWN computer (http://localhost:8000) = the owner, with
+    // every moveset. The public website and the Claude link are never
+    // "localhost", so other players always get the normal game.
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return true;
     return localStorage.getItem('sp-owner') === 'yes';
   } catch (e) {
     return false;            // no storage? then you're a normal player.
@@ -6015,6 +6024,9 @@ function useMove(actor, moves, key, target) {
   // ...but a COUNTER is exempt. With a 1s cap you could hold C down and be
   // invulnerable basically forever, which beats every boss in the game.
   actor.cd[key] = move.guard ? Math.max(capped, move.guard * 2.4) : capped;
+  // In a BOSS FIGHT your teleport (X) has no cooldown -- blink round them as
+  // fast as you like. Outside boss fights it recharges like normal.
+  if (actor === player && key === 'x' && boss) actor.cd[key] = 0;
   const dur = move.wind + 0.28;
   actor.busy = dur;
   actor.anim = { name: move.anim, t: 0, dur };
@@ -6459,11 +6471,13 @@ function dealDamage(actor, move, target, at, pushDir) {
   if (actor === player && target === boss) {
     // A boss shrugs off part of the hit...
     dmg = Math.round(dmg * DAMAGE_TO_BOSS);
+    // ARMOURED bosses (the God of Death) only take this share of each hit
+    if (bossDef && bossDef.armor) dmg = Math.round(dmg * bossDef.armor);
     // ...but never all of it. Every hit takes at least a slice of the bar, so
     // even FISTS can bring down the biggest thing in the game if you keep at
     // it. This is what stops a late boss being flat-out immortal to a weak
     // moveset -- it just makes it a very long, very hard fight instead.
-    dmg = Math.max(dmg, Math.ceil(target.maxHp * MIN_BOSS_CHIP));
+    if (!(bossDef && bossDef.noChip)) dmg = Math.max(dmg, Math.ceil(target.maxHp * MIN_BOSS_CHIP));
     dmg = Math.max(1, dmg);
   }
   // Bosses hit harder than what's written on their moves.
@@ -6826,7 +6840,7 @@ function stepScene(dt) {
 // whatever you're fighting (the boss, or the dummy) and punch it, for your
 // moveset's damage. They can't be hurt, and crumble after a while.
 const minions = [];
-const MINION_LIFE = 12, MAX_MINIONS = 8;
+const MINION_LIFE = 12, MAX_MINIONS = 100;   // an ARMY (any more and the game would lag)
 let boneFighterTex = null;
 function makeSkeletonRig() {
   if (!boneFighterTex) boneFighterTex = makeBossSkin(812, 0xeee4cc, 11);
@@ -6916,9 +6930,18 @@ function startBossFight(forced) {
   boss = makeCombatant(rig, 0, -14, Math.round(def.hp * BOSS_HP_MULT), def.size);
   boss.rig.torso.material.color.setHex((MOVESETS[def.moveset] || MOVESETS.fists).bodyColor);
   boss.attackTimer = 1.2;
+  boss.damageScale = def.power || 1;     // some bosses hit harder from the start
 
   if (dungeon <= 0) player.hp = player.maxHp;   // NO healing between dungeon stages
   player.pos.set(0, 0, 7); player.vel.set(0, 0, 0);
+  // YOUR MINIONS COME WITH YOU: they line up round you, fresh, ready to fight
+  minions.forEach((m, i) => {
+    const a = (i / Math.max(1, minions.length)) * Math.PI * 2;
+    m.pos.set(Math.sin(a) * 2.6, 0, 7 + Math.cos(a) * 2.6);
+    m.life = MINION_LIFE;
+    m.rig.root.position.copy(m.pos);
+    spawnBits(m.pos.clone().setY(0.6), 0xd8cfb8, 8, 4);
+  });
   dummy.rig.root.visible = false;
   hpBar.visible = false;
 
@@ -7240,7 +7263,7 @@ function updateHud(dt) {
   if (boss) bossFill.style.width = Math.max(0, boss.hp / boss.maxHp * 100) + '%';
 
   const next = nextBoss();
-  hintEl.textContent = boss ? '' : (next ? 'PRESS  B  TO FIGHT THE ' + next.name +
+  hintEl.textContent = boss ? '' : (next ? 'PRESS  B  TO FIGHT ' + (/^THE /.test(next.name) ? '' : 'THE ') + next.name +
                                            '  (BOSS ' + bossNumber(next) + ' / ' + BOSSES.length + ')'
                                          : 'YOU BEAT EVERY BOSS!');
 
@@ -8080,6 +8103,7 @@ window.GAME = {
   get boss() { return boss; }, get active() { return active; },
   get unlocked() { return unlocked; }, get ultMeter() { return ultMeter; },
   get ultTime() { return ultTime; }, goUltimate, currentMoves,
+  get minions() { return minions; },
   fillUlt() { ultMeter = 1; },
   playerMove, startBossFight, switchMoveset,
   resetSave() { localStorage.removeItem('strongest-pixels-save'); location.reload(); },
