@@ -6474,17 +6474,34 @@ let comboShow = 0;     // how long the counter stays on screen
 // checks who you're signed in as. Owners get the admin panel and the
 // ADMIN AURA. Everybody else gets the normal game.
 let isOwner = IS_OWNER;
+
+// EVERYTHING THE OWNER GETS: every moveset, the ADMIN AURA (owned and
+// equipped), and a place at the FINAL BOSS on the ladder.
+function giveOwnerStuff() {
+  if (!isOwner) return;
+  for (const id of allMovesetIds()) if (!unlocked.includes(id)) unlocked.push(id);
+  save();
+  if (!ownedItems().includes('a_admin')) ownedItems().push('a_admin');
+  const eq = equippedItems();
+  if (!eq.includes('a_admin')) {
+    if (eq.length >= INVENTORY_SLOTS) {           // make room: swap out an aura, or the last thing
+      const auraAt = eq.findIndex(id => (ITEMS.find(x => x.id === id) || {}).kind === 'aura');
+      eq.splice(auraAt >= 0 ? auraAt : eq.length - 1, 1);
+    }
+    eq.push('a_admin');
+  }
+  if (stats.bossProgress < BOSSES.length - 1) stats.bossProgress = BOSSES.length - 1;
+  saveStats();
+  refreshGear();
+  buildBar();                                     // adds the secret admin corner
+}
 (async function checkRealOwner() {
   try {
     if (isOwner || !window.claude || !window.claude.use) return;
     const user = await window.claude.use('user');
     if (user && await user.isOwner()) {
       isOwner = true;
-      // the owner gets EVERY moveset in the real game too
-      for (const id of allMovesetIds()) if (!unlocked.includes(id)) unlocked.push(id);
-      save();
-      buildBar();                                  // adds the secret admin corner
-      refreshGear();
+      giveOwnerStuff();
       banner('WELCOME BACK, OWNER!  EVERY MOVESET IS YOURS.');
     }
   } catch (e) { /* not online, or no viewer -- a normal player */ }
@@ -7631,6 +7648,7 @@ checkKillUnlocks(false);      // kills you already earned count straight away
 wearAvatar(AVATARS.some(a => a.id === stats.avatar) ? stats.avatar : 'steve');
 refreshGear();
 setTimeout(loadArmy, 600);     // the owner's saved skeleton army comes back
+giveOwnerStuff();              // owners (own computer / private copy) get everything
 
 function updateHud(dt) {
   for (const k in slots) {
