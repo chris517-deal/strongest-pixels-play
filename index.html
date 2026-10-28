@@ -5723,6 +5723,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'AltLeft' || e.code === 'AltRight') { e.preventDefault(); toggleAdminAura(); }   // OPTION
   if (k === 'v') toggleInventory();      // V = the inventory
   if (k === 'h') showHelp();
+  if (k === 'backspace') { e.preventDefault(); toggleArmy(); }   // put the army away / bring it back
   const setIdx = '1234567890-=[]\\;\',./'.indexOf(k);
   if (k.length === 1 && setIdx >= 0) switchMoveset(setIdx);
   if (k === 'b') startBossFight();
@@ -6479,8 +6480,12 @@ let isOwner = IS_OWNER;
     const user = await window.claude.use('user');
     if (user && await user.isOwner()) {
       isOwner = true;
+      // the owner gets EVERY moveset in the real game too
+      for (const id of allMovesetIds()) if (!unlocked.includes(id)) unlocked.push(id);
+      save();
       buildBar();                                  // adds the secret admin corner
-      banner('WELCOME BACK, OWNER!');
+      refreshGear();
+      banner('WELCOME BACK, OWNER!  EVERY MOVESET IS YOURS.');
     }
   } catch (e) { /* not online, or no viewer -- a normal player */ }
 })();
@@ -7182,7 +7187,32 @@ function makeSkeletonRig() {
 const START_ARMY = 0;          // how many an owner starts with on a fresh save
 function saveArmy() {
   if (!isOwner) return;
-  try { localStorage.setItem('sp-army', String(minions.length)); } catch (e) {}
+  try { localStorage.setItem('sp-army', String(minions.length + stashedArmy.length)); } catch (e) {}
+}
+
+// BACKSPACE puts your skeleton army AWAY (they vanish and stop fighting),
+// and BACKSPACE again brings every one of them back round you.
+let stashedArmy = [];
+function toggleArmy() {
+  if (stashedArmy.length) {
+    stashedArmy.forEach((m, i) => {
+      const a = (i / stashedArmy.length) * Math.PI * 2, r = 2.5 + (i % 5) * 0.8;
+      m.pos.set(player.pos.x + Math.sin(a) * r, 0, player.pos.z + Math.cos(a) * r);
+      m.rig.root.position.copy(m.pos);
+      m.rig.root.visible = true;
+    });
+    minions.push(...stashedArmy);
+    spawnBits(player.pos.clone().setY(0.6), 0xd8cfb8, 30, 8);
+    banner('YOUR ARMY OF ' + stashedArmy.length + ' SKELETONS IS BACK!');
+    stashedArmy = [];
+  } else if (minions.length) {
+    stashedArmy = minions.splice(0);
+    for (const m of stashedArmy) m.rig.root.visible = false;
+    banner(stashedArmy.length + ' SKELETONS PUT AWAY  (BACKSPACE TO BRING THEM BACK)');
+  } else {
+    banner('NO SKELETON ARMY YET -- USE SKELETON GOD\'S R');
+  }
+  saveArmy();
 }
 function loadArmy() {
   if (!isOwner) return;
