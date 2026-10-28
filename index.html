@@ -1096,10 +1096,10 @@ const MOVESETS = {
   // THE GOD DRAGON -- flies, rains beams of energy down from the sky, and
   // dive-bombs you out of the clouds.
   m_goddragon:{ label:'GOD DRAGON', bodyColor:0xffd24a, moves:{
-    q:{ name:'SKY BEAMS',      cd:2.0, dmg:160, wind:0.50, reach:60.0, arc:6.3, knock:30, lift:20, anim:'cast',  fx:'shock', color:0xffe066, skybeam:4 },
+    q:{ name:'SKY BEAMS',      cd:1.6, dmg:160, wind:0.45, reach:60.0, arc:6.3, knock:30, lift:20, anim:'cast',  fx:'shock', color:0xffe066, skybeam:7 },
     e:{ name:'DIVE BOMB',      cd:3.0, dmg:200, wind:0.40, reach:12.0, arc:2.2, knock:50, lift:30, anim:'headbutt', fx:'shock', color:0xffd24a, dash:55, quake:30 },
     r:{ name:'GOD BREATH',     cd:4.5, dmg:240, wind:0.60, reach:40.0, arc:1.4, knock:60, lift:24, anim:'cast',  fx:'shock', color:0xfff4c0, laser:true, twin:true, storm:20 },
-    f:{ name:'HEAVEN FALL',    cd:6.0, dmg:180, wind:0.70, reach:60.0, arc:6.3, knock:40, lift:30, anim:'slam',  fx:'shock', color:0xffffff, skybeam:9 },
+    f:{ name:'HEAVEN FALL',    cd:5.0, dmg:180, wind:0.70, reach:60.0, arc:6.3, knock:40, lift:30, anim:'slam',  fx:'shock', color:0xffffff, skybeam:16 },
     x:{ name:'METEOR TALONS',  cd:3.5, dmg:150, wind:0.40, reach:45.0, arc:6.3, knock:40, lift:22, anim:'upper', fx:'spark', color:0xffe066, spikes:14 } } },
 
   m_crab:     { label:'CRAB', bodyColor:0xd94a2a, moves:{
@@ -1660,10 +1660,11 @@ BOSSES.push({
 // GOD. It flies high over the arena, rains giant beams of energy down on
 // you, and dive-bombs you out of the sky. Beat it for AIRBENDING GOD.
 BOSSES.push({
-  name: 'THE GOD DRAGON', hp: 250000000 / BOSS_HP_MULT, size: 1.6, speed: 16.0,
-  attackEvery: 0.30, body: 'goddragon', reads: true, fly: 7,
-  moveset: 'm_goddragon', unlocks: 'airbender', enrageAt: 0.50, enrageBoost: 2.8,
-  armor: 0.5, noChip: true, power: 2.0,
+  // ONE BILLION health, and armour that blocks 90% of every hit
+  name: 'THE GOD DRAGON', hp: 1000000000 / BOSS_HP_MULT, size: 1.6, speed: 19.0,
+  attackEvery: 0.24, body: 'goddragon', reads: true, fly: 7,
+  moveset: 'm_goddragon', unlocks: 'airbender', enrageAt: 0.50, enrageBoost: 4.0,
+  armor: 0.1, noChip: true, power: 3.0,
   lore: 'IT BEAT THE ULTIMATE GOD WHEN HE WAS ONLY A WARRIOR. THEN IT DIED... AND CAME BACK AS A GOD.',
 });
 
@@ -5412,6 +5413,7 @@ function stepSkyBeams(dt) {
         shatterGround(new THREE.Vector3(b.x, 0, b.z), 10, 12);
         shake = Math.min(1, shake + 0.4);
         SFX.hit(0.9);
+        knockOutMinions(new THREE.Vector3(b.x, 0, b.z), 2.8);
         const t = b.target;
         if (t && t.gone <= 0 && Math.hypot(t.pos.x - b.x, t.pos.z - b.z) < 2.6) {
           dealDamage(b.actor, b.move, t, t.pos.clone().setY(t.pos.y + 1.2));
@@ -6826,6 +6828,8 @@ function landHit(actor, move, target, aimYaw) {
   if (move.summon && actor === player) summonMinions(move.summon, move);
   if (!target || target.gone > 0) return;
   if (move.skybeam) { spawnSkyBeams(actor, move, target); return; }
+  // BOSSES FIGHT BACK: anything it swings at knocks out skeletons in reach
+  if (actor === boss && minions.length) knockOutMinions(actor.pos, Math.min(move.reach, 9) * 0.8);
 
   const yaw = aimYaw === undefined ? actor.yaw : aimYaw;
   const facing = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
@@ -6976,7 +6980,11 @@ function dealDamage(actor, move, target, at, pushDir) {
   }
   if (target === player && has('armor')) dmg = Math.max(1, Math.round(dmg * 0.75));   // IRON AURA
   // SKELETON MINIONS always hit for at least 10,000 -- even through armour
-  if (move.minion) dmg = Math.max(dmg, 10000);
+  if (move.minion) {
+    // against an ARMOURED boss a skeleton punch is a flat 10,000 -- so an army
+    // is strong, but can't delete a god in two seconds
+    dmg = (target === boss && bossDef && bossDef.armor) ? 10000 : Math.max(dmg, 10000);
+  }
   target.hp -= dmg;
   // SOUL SCYTHE: every hit you land heals you a little
   if (actor === player && target !== player && has('lifesteal')) {
@@ -7347,7 +7355,7 @@ function makeSkeletonRig() {
 const START_ARMY = 0;          // how many an owner starts with on a fresh save
 function saveArmy() {
   if (!isOwner) return;
-  try { localStorage.setItem('sp-army', String(minions.length + stashedArmy.length)); } catch (e) {}
+  try { localStorage.setItem('sp-army', String(minions.length + stashedArmy.length + downedArmy.length)); } catch (e) {}
 }
 
 // BACKSPACE puts your skeleton army AWAY (they vanish and stop fighting),
@@ -7419,6 +7427,31 @@ function stepPerf(dt) {
     perfEl.style.color = fps >= 50 ? '#7fff7f' : fps >= 30 ? '#ffe066' : '#ff6a6a';
     perfFrames = 0; perfClock = 0;
   }
+}
+
+// KNOCKED-OUT SKELETONS: a boss's attacks smash the skeletons in the way.
+// They're only knocked OUT -- they all get back up when the fight ends, so
+// your army never shrinks for good.
+let downedArmy = [];
+function knockOutMinions(at, radius) {
+  for (let i = minions.length - 1; i >= 0; i--) {
+    const m = minions[i];
+    if (Math.hypot(m.pos.x - at.x, m.pos.z - at.z) > radius) continue;
+    spawnBits(m.pos.clone().setY(1), 0xd8cfb8, 10, 6);
+    m.rig.root.visible = false;
+    downedArmy.push(minions.splice(i, 1)[0]);
+  }
+}
+function reviveArmy() {
+  if (!downedArmy.length) return;
+  downedArmy.forEach((m, i) => {
+    const a = (i / downedArmy.length) * Math.PI * 2;
+    m.pos.set(player.pos.x + Math.sin(a) * 3, 0, player.pos.z + Math.cos(a) * 3);
+    m.rig.root.position.copy(m.pos);
+    m.rig.root.visible = true;
+  });
+  minions.push(...downedArmy);
+  downedArmy = [];
 }
 
 function stepMinions(dt, elapsed) {
@@ -7516,6 +7549,7 @@ function startBossFight(forced) {
 }
 
 function endBossFight(won) {
+  reviveArmy();                       // knocked-out skeletons get back up
   if (boss) { scene.remove(boss.rig.root); boss = null; }
   // clear any spikes still in the air, or a dead boss keeps hitting you
   for (const s of spikes) { scene.remove(s.mesh); s.mesh.material.dispose(); }
